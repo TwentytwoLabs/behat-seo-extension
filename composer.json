@@ -1,0 +1,21 @@
+{
+    "name": "twentytwo-labs/behat-seo-extension",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Thibaut ALGRIN",
+            "email": "algrin.thibaut@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TwentytwoLabs\\BehatSeoExtension\\": "src/"
+        }
+    },
+    "require": {
+        "friends-of-behat/mink-extension": "^2.7",
+        "webmozart/assert": "^1.11",
+        "rexxars/html-validator": "^2.3",
+        "vipnytt/robotstxtparser": "^2.1"
+    }
+}
