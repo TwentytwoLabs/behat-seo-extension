@@ -5,17 +5,13 @@ declare(strict_types=1);
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
 use Behat\Mink\Exception\UnsupportedDriverActionException;
-use Behat\Symfony2Extension\Driver\KernelDriver;
 use InvalidArgumentException;
 use vipnytt\RobotsTxtParser\UriClient;
 use Webmozart\Assert\Assert;
 
-class RobotsContext extends BaseContext
+final class RobotsContext extends BaseContext
 {
-    /**
-     * @var string
-     */
-    private $crawlerUserAgent = 'Googlebot';
+    private string $crawlerUserAgent = 'Googlebot';
 
     /**
      * @Given I am a :crawlerUserAgent crawler
@@ -23,6 +19,21 @@ class RobotsContext extends BaseContext
     public function iAmACrawler(string $crawlerUserAgent): void
     {
         $this->crawlerUserAgent = $crawlerUserAgent;
+    }
+
+    /**
+     * @Then I should be able to crawl :resource
+     */
+    public function iShouldBeAbleToCrawl(string $resource): void
+    {
+        Assert::true(
+            $this->getRobotsClient()->userAgent($this->crawlerUserAgent, '1.0')->isAllowed($resource),
+            sprintf(
+                'Crawler with User-Agent %s is not allowed to crawl %s',
+                $this->crawlerUserAgent,
+                $resource
+            )
+        );
     }
 
     /**
@@ -40,20 +51,11 @@ class RobotsContext extends BaseContext
         );
     }
 
-    private function getRobotsClient(): UriClient
-    {
-        return new UriClient($this->webUrl);
-    }
-
     /**
-     * @throws UnsupportedDriverActionException
-     *
      * @Then I should be able to get the sitemap URL
      */
     public function iShouldBeAbleToGetTheSitemapUrl(): void
     {
-        $this->doesNotSupportDriver(KernelDriver::class);
-
         $sitemaps = $this->getRobotsClient()->sitemap()->export();
 
         Assert::false(
@@ -74,35 +76,17 @@ class RobotsContext extends BaseContext
             $this->getSession()->visit($sitemaps[0]);
         } catch (\Throwable $e) {
             throw new InvalidArgumentException(
-                sprintf(
-                    'Sitemap url %s is not valid. Exception: %s',
-                    $sitemaps[0],
-                    $e->getMessage()
-                ),
+                sprintf('Sitemap url %s is not valid. Exception: %s', $sitemaps[0], $e->getMessage()),
                 0,
                 $e
             );
         }
 
-        Assert::eq(
-            200,
-            $this->getStatusCode(),
-            sprintf('Sitemap url %s is not valid.', $sitemaps[0])
-        );
+        Assert::eq(200, $this->getStatusCode(), sprintf('Sitemap url %s is not valid.', $sitemaps[0]));
     }
 
-    /**
-     * @Then I should be able to crawl :resource
-     */
-    public function iShouldBeAbleToCrawl(string $resource): void
+    private function getRobotsClient(): UriClient
     {
-        Assert::true(
-            $this->getRobotsClient()->userAgent($this->crawlerUserAgent, '1.0')->isAllowed($resource),
-            sprintf(
-                'Crawler with User-Agent %s is not allowed to crawl %s',
-                $this->crawlerUserAgent,
-                $resource
-            )
-        );
+        return new UriClient($this->webUrl);
     }
 }

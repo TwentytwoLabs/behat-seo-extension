@@ -8,16 +8,12 @@ use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\MinkExtension\Context\RawMinkContext;
-use Behat\Symfony2Extension\Driver\KernelDriver;
 use InvalidArgumentException;
 use TwentytwoLabs\BehatSeoExtension\Exception\TimeoutException;
 
 class BaseContext extends RawMinkContext
 {
-    /**
-     * @var string
-     */
-    protected $webUrl;
+    protected string $webUrl;
 
     /**
      * @BeforeScenario
@@ -29,24 +25,12 @@ class BaseContext extends RawMinkContext
 
     protected function getOuterHtml(NodeElement $nodeElement): string
     {
-        if (method_exists($nodeElement, 'getOuterHtml')) {
-            return $nodeElement->getOuterHtml();
-        }
-
-        return $nodeElement->getHtml();
+        return $nodeElement->getOuterHtml();
     }
 
     protected function getResponseHeader(string $header): ?string
     {
-        if (method_exists($this->getSession(), 'getResponseHeader')) {
-            return $this->getSession()->getResponseHeader($header);
-        }
-
-        if (isset($this->getSession()->getResponseHeaders()[$header][0])) {
-            return $this->getSession()->getResponseHeaders()[$header][0];
-        }
-
-        return null;
+        return $this->getSession()->getResponseHeader($header);
     }
 
     /**
@@ -54,15 +38,7 @@ class BaseContext extends RawMinkContext
      */
     protected function visit(string $url): void
     {
-        $driver = $this->getSession()->getDriver();
-
-        if ($driver instanceof KernelDriver) {
-            $driver->getClient()->request('GET', $url);
-
-            return;
-        }
-
-        $driver->visit($url);
+        $this->getSession()->getDriver()->visit($url);
     }
 
     protected function getStatusCode(): int
@@ -97,7 +73,7 @@ class BaseContext extends RawMinkContext
 
     protected function toAbsoluteUrl(string $url): string
     {
-        if (false === strpos($url, '://')) {
+        if (!str_contains($url, '://')) {
             $url = sprintf('%s%s', $this->webUrl, $url);
         }
 

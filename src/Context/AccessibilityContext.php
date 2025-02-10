@@ -7,7 +7,7 @@ namespace TwentytwoLabs\BehatSeoExtension\Context;
 use Behat\Mink\Element\NodeElement;
 use Webmozart\Assert\Assert;
 
-class AccessibilityContext extends BaseContext
+final class AccessibilityContext extends BaseContext
 {
     /**
      * @Then the images should have alt text

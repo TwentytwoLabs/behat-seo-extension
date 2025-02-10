@@ -8,7 +8,7 @@ use Behat\Mink\Element\NodeElement;
 use Matriphe\ISO639\ISO639;
 use Webmozart\Assert\Assert;
 
-class LocalizationContext extends BaseContext
+final class LocalizationContext extends BaseContext
 {
     /**
      * @Then the page hreflang markup should be valid
@@ -20,6 +20,14 @@ class LocalizationContext extends BaseContext
         $this->assertHreflangValidIsoCodes();
         $this->assertHreflangCoherentXDefault();
         $this->assertHreflangValidReciprocal();
+    }
+
+    /**
+     * @Then the page hreflang markup should not be valid
+     */
+    public function thePageHreflangMarkupShouldNotBeValid(): void
+    {
+        $this->assertInverse([$this, 'thePageHreflangMarkupShouldBeValid'], 'hreflang markup should not be valid.');
     }
 
     private function assertHreflangExists(): void
@@ -95,7 +103,7 @@ class LocalizationContext extends BaseContext
             }
         }
 
-        if ('' === $xDefault) {
+        if (empty($xDefault)) {
             return;
         }
 
@@ -113,11 +121,7 @@ class LocalizationContext extends BaseContext
                 );
 
                 Assert::notNull($hreflangAltDefault);
-
-                Assert::eq(
-                    $xDefault,
-                    $hreflangAltDefault->getAttribute('href')
-                );
+                Assert::eq($xDefault, $hreflangAltDefault->getAttribute('href'));
 
                 $this->getSession()->back();
             }
@@ -145,9 +149,8 @@ class LocalizationContext extends BaseContext
             $referencedPageHreflangLinks = [];
 
             foreach ($this->getHreflangElements() as $hreflangElement) {
-                $referencedPageHreflangLinks[$hreflangElement->getAttribute(
-                    'hreflang'
-                )] = $hreflangElement->getAttribute('href');
+                $hreflang = $hreflangElement->getAttribute('hreflang');
+                $referencedPageHreflangLinks[$hreflang] = $hreflangElement->getAttribute('href');
             }
 
             $this->getSession()->back();
@@ -158,16 +161,5 @@ class LocalizationContext extends BaseContext
                 'Missing or not coherent hreflang reciprocal links.'
             );
         }
-    }
-
-    /**
-     * @Then the page hreflang markup should not be valid
-     */
-    public function thePageHreflangMarkupShouldNotBeValid(): void
-    {
-        $this->assertInverse(
-            [$this, 'thePageHreflangMarkupShouldBeValid'],
-            'hreflang markup should not be valid.'
-        );
     }
 }

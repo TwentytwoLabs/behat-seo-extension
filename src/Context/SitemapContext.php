@@ -12,19 +12,15 @@ use DOMNodeList;
 use DOMXPath;
 use InvalidArgumentException;
 use TwentytwoLabs\BehatSeoExtension\Exception\InvalidOrderException;
-use Symfony\Component\Routing\Exception\RouteNotFoundException;
 use Webmozart\Assert\Assert;
 
-class SitemapContext extends BaseContext
+final class SitemapContext extends BaseContext
 {
     public const SITEMAP_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap.xsd';
     public const SITEMAP_XHTML_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap_xhtml.xsd';
     public const SITEMAP_INDEX_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap_index.xsd';
 
-    /**
-     * @var DOMDocument
-     */
-    private $sitemapXml;
+    private DOMDocument $sitemapXml;
 
     /**
      * @Given the sitemap :sitemapUrl
@@ -34,14 +30,35 @@ class SitemapContext extends BaseContext
         $this->sitemapXml = $this->getSitemapXml($sitemapUrl);
     }
 
-    private function getSitemapXml(string $sitemapUrl): DOMDocument
+    /**
+     * @Then /^the (index |multilanguage |)sitemap should not be valid$/
+     */
+    public function theSitemapShouldNotBeValid(string $sitemapType = ''): void
     {
-        $xml = new DOMDocument();
-        @$xmlLoaded = $xml->load($this->toAbsoluteUrl($sitemapUrl));
+        $this->assertInverse(
+            function () use ($sitemapType) {
+                $this->theSitemapShouldBeValid($sitemapType);
+            },
+            sprintf('The sitemap is a valid %s sitemap.', $sitemapType)
+        );
+    }
 
-        Assert::true($xmlLoaded, 'Error loading %s Sitemap using DOMDocument');
+    /**
+     * @throws InvalidOrderException
+     *
+     * @Then /^the (index |multilanguage |)sitemap should be valid$/
+     */
+    public function theSitemapShouldBeValid(string $sitemapType = ''): void
+    {
+        $this->assertSitemapHasBeenRead();
 
-        return $xml;
+        $sitemapSchemaFile = match (trim($sitemapType)) {
+            'index' => self::SITEMAP_INDEX_SCHEMA_FILE,
+            'multilanguage' => self::SITEMAP_XHTML_SCHEMA_FILE,
+            default => self::SITEMAP_SCHEMA_FILE,
+        };
+
+        $this->assertValidSitemap(realpath($sitemapSchemaFile));
     }
 
     /**
@@ -54,7 +71,8 @@ class SitemapContext extends BaseContext
         $this->assertSitemapHasBeenRead();
 
         $xpathExpression = sprintf(
-            '//sm:sitemapindex/sm:sitemap/sm:loc[contains(text(),"%s")]',
+            '//sm:sitemapindex/sm:sitemap/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
+            $childSitemapUrl,
             $childSitemapUrl
         );
 
@@ -62,12 +80,39 @@ class SitemapContext extends BaseContext
 
         Assert::notFalse($sitemapChildren);
 
-        Assert::greaterThanEq(
+        Assert::eq(
             $sitemapChildren->length,
             1,
+            sprintf('Sitemap index %s has not child sitemap %s', $this->sitemapXml->documentURI, $childSitemapUrl)
+        );
+    }
+
+    /**
+     * @throws InvalidOrderException
+     *
+     * @Then the index sitemap should not have a child with URL :childSitemapUrl
+     */
+    public function theIndexSitemapShouldNotHaveAChildWithUrl(string $childSitemapUrl): void
+    {
+        $this->assertSitemapHasBeenRead();
+
+        $xpathExpression = sprintf(
+            '//sm:sitemapindex/sm:sitemap/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
+            $childSitemapUrl,
+            $childSitemapUrl
+        );
+
+        $sitemapChildren = $this->getXpathInspector()->query($xpathExpression);
+
+        Assert::notFalse($sitemapChildren);
+
+        Assert::eq(
+            $sitemapChildren->length,
+            0,
             sprintf(
-                'Sitemap index %s has not child sitemap %s',
+                'Sitemap index %s has %d children sitemap %s',
                 $this->sitemapXml->documentURI,
+                $sitemapChildren->length,
                 $childSitemapUrl
             )
         );
@@ -75,23 +120,58 @@ class SitemapContext extends BaseContext
 
     /**
      * @throws InvalidOrderException
+     *
+     * @Then the sitemap should have a child with URL :childSitemapUrl
      */
-    private function assertSitemapHasBeenRead(): void
+    public function theSitemapShouldHaveAChildWithUrl(string $childSitemapUrl): void
     {
-        if (!isset($this->sitemapXml)) {
-            throw new InvalidOrderException(
-                'You should execute "Given the sitemap :sitemapUrl" step before executing this step.'
-            );
-        }
+        $this->assertSitemapHasBeenRead();
+
+        $xpathExpression = sprintf(
+            '//sm:urlset/sm:url/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
+            $childSitemapUrl,
+            $childSitemapUrl
+        );
+
+        $sitemapChildren = $this->getXpathInspector()->query($xpathExpression);
+
+        Assert::notFalse($sitemapChildren);
+        Assert::eq(
+            $sitemapChildren->length,
+            1,
+            sprintf('Sitemap index %s has not child sitemap %s', $this->sitemapXml->documentURI, $childSitemapUrl)
+        );
     }
 
-    private function getXpathInspector(): DOMXPath
+    /**
+     * @throws InvalidOrderException
+     *
+     * @Then the sitemap should not have a child with URL :childSitemapUrl
+     */
+    public function theSitemapShouldNotHaveAChildWithUrl(string $childSitemapUrl): void
     {
-        $xpath = new DOMXPath($this->sitemapXml);
-        $xpath->registerNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
-        $xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
+        $this->assertSitemapHasBeenRead();
 
-        return $xpath;
+        $xpathExpression = sprintf(
+            '//sm:urlset/sm:url/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
+            $childSitemapUrl,
+            $childSitemapUrl
+        );
+
+        $sitemapChildren = $this->getXpathInspector()->query($xpathExpression);
+
+        Assert::notFalse($sitemapChildren);
+
+        Assert::eq(
+            $sitemapChildren->length,
+            0,
+            sprintf(
+                'Sitemap index %s has %d children sitemap %s',
+                $this->sitemapXml->documentURI,
+                $sitemapChildren->length,
+                $childSitemapUrl
+            )
+        );
     }
 
     /**
@@ -125,72 +205,6 @@ class SitemapContext extends BaseContext
 
     /**
      * @throws InvalidOrderException
-     *
-     * @Then the multilanguage sitemap should pass Google validation
-     */
-    public function theMultilanguageSitemapShouldPassGoogleValidation(): void
-    {
-        $this->assertSitemapHasBeenRead();
-
-        $this->assertValidSitemap(self::SITEMAP_XHTML_SCHEMA_FILE);
-
-        $urlsNodes = $this->getXpathInspector()->query('//sm:urlset/sm:url');
-
-        Assert::notFalse($urlsNodes);
-
-        /** @var DOMElement $urlNode */
-        foreach ($urlsNodes as $urlNode) {
-            $urlElement = $urlNode->getElementsByTagName('loc')->item(0);
-
-            Assert::notNull($urlElement);
-
-            $urlLoc = $urlElement->nodeValue;
-
-            /** @var DOMElement $alternateLink */
-            foreach ($urlNode->getElementsByTagName('link') as $alternateLink) {
-                $alternateLinkHref = $alternateLink->getAttribute('href');
-
-                if ($alternateLinkHref !== $urlLoc) {
-                    $alternateLinkNodes = $this->getXpathInspector()->query(
-                        sprintf('//sm:urlset/sm:url/sm:loc[text()="%s"]', $alternateLinkHref)
-                    );
-
-                    Assert::notFalse($alternateLinkNodes);
-
-                    Assert::greaterThanEq(
-                        $alternateLinkNodes->length,
-                        1,
-                        sprintf(
-                            'Url %s has not reciprocous URL for alternative link %s in Sitemap %s',
-                            $urlLoc,
-                            $alternateLinkHref,
-                            $this->sitemapXml->documentURI
-                        )
-                    );
-                }
-            }
-        }
-    }
-
-    private function assertValidSitemap(string $sitemapSchemaFile): void
-    {
-        Assert::fileExists(
-            $sitemapSchemaFile,
-            sprintf('Sitemap schema file %s does not exist', $sitemapSchemaFile)
-        );
-
-        Assert::true(
-            @$this->sitemapXml->schemaValidate($sitemapSchemaFile),
-            sprintf(
-                'Sitemap %s does not pass validation using %s schema',
-                $this->sitemapXml->documentURI,
-                $sitemapSchemaFile
-            )
-        );
-    }
-
-    /**
-     * @throws InvalidOrderException
      * @throws DriverException
      *
      * @Then the sitemap URLs should be alive
@@ -207,41 +221,6 @@ class SitemapContext extends BaseContext
             $this->urlIsValid($locNode);
             $this->urlIsAlive($locNode);
         }
-    }
-
-    /**
-     * @throws DriverException
-     */
-    private function urlIsValid(DOMNode $locNode): void
-    {
-        try {
-            $this->visit($locNode->nodeValue);
-        } catch (RouteNotFoundException $e) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Sitemap Url %s is not valid in Sitemap: %s. Exception: %s',
-                    $locNode->nodeValue,
-                    $this->sitemapXml->documentURI,
-                    $e->getMessage()
-                ),
-                0,
-                $e
-            );
-        }
-    }
-
-    private function urlIsAlive(DOMNode $locNode): void
-    {
-        Assert::eq(
-            200,
-            $this->getStatusCode(),
-            sprintf(
-                'Sitemap Url %s is not valid in Sitemap: %s. Response status code: %s',
-                $locNode->nodeValue,
-                $this->sitemapXml->documentURI,
-                $this->getStatusCode()
-            )
-        );
     }
 
     /**
@@ -282,41 +261,52 @@ class SitemapContext extends BaseContext
     }
 
     /**
-     * @Then /^the (index |multilanguage |)sitemap should not be valid$/
-     */
-    public function theSitemapShouldNotBeValid(string $sitemapType = ''): void
-    {
-        $this->assertInverse(
-            function () use ($sitemapType) {
-                $this->theSitemapShouldBeValid($sitemapType);
-            },
-            sprintf('The sitemap is a valid %s sitemap.', $sitemapType)
-        );
-    }
-
-    /**
      * @throws InvalidOrderException
      *
-     * @Then /^the (index |multilanguage |)sitemap should be valid$/
+     * @Then the multilanguage sitemap should pass Google validation
      */
-    public function theSitemapShouldBeValid(string $sitemapType = ''): void
+    public function theMultilanguageSitemapShouldPassGoogleValidation(): void
     {
         $this->assertSitemapHasBeenRead();
 
-        switch (trim($sitemapType)) {
-            case 'index':
-                $sitemapSchemaFile = self::SITEMAP_INDEX_SCHEMA_FILE;
+        $this->assertValidSitemap(self::SITEMAP_XHTML_SCHEMA_FILE);
 
-                break;
-            case 'multilanguage':
-                $sitemapSchemaFile = self::SITEMAP_XHTML_SCHEMA_FILE;
+        $urlsNodes = $this->getXpathInspector()->query('//sm:urlset/sm:url');
 
-                break;
-            default:
-                $sitemapSchemaFile = self::SITEMAP_SCHEMA_FILE;
+        Assert::notFalse($urlsNodes);
+
+        /** @var DOMElement $urlNode */
+        foreach ($urlsNodes as $urlNode) {
+            $urlElement = $urlNode->getElementsByTagName('loc')->item(0);
+
+            Assert::notNull($urlElement);
+
+            $urlLoc = $urlElement->nodeValue;
+
+            /** @var DOMElement $alternateLink */
+            foreach ($urlNode->getElementsByTagName('link') as $alternateLink) {
+                $alternateLinkHref = $alternateLink->getAttribute('href');
+
+                if ($alternateLinkHref !== $urlLoc) {
+                    $alternateLinkNodes = $this->getXpathInspector()->query(
+                        sprintf('//sm:urlset/sm:url/sm:loc[text()="%s"]', $alternateLinkHref)
+                    );
+
+                    Assert::notFalse($alternateLinkNodes);
+
+                    Assert::eq(
+                        $alternateLinkNodes->length,
+                        1,
+                        sprintf(
+                            'Url %s has not reciprocous URL for alternative link %s in Sitemap %s',
+                            $urlLoc,
+                            $alternateLinkHref,
+                            $this->sitemapXml->documentURI
+                        )
+                    );
+                }
+            }
         }
-
-        $this->assertValidSitemap($sitemapSchemaFile);
     }
 
     /**
@@ -327,6 +317,92 @@ class SitemapContext extends BaseContext
         $this->assertInverse(
             [$this, 'theMultilanguageSitemapShouldPassGoogleValidation'],
             sprintf('The multilanguage sitemap passes Google validation.')
+        );
+    }
+
+    private function getSitemapXml(string $sitemapUrl): DOMDocument
+    {
+        $this->getSession()->visit($sitemapUrl);
+
+        $xml = new DOMDocument();
+        $xml->strictErrorChecking = true;
+        $xmlLoaded = @$xml->loadXML($this->getSession()->getPage()->getContent());
+
+        Assert::true($xmlLoaded, 'Error loading %s Sitemap using DOMDocument');
+
+        return $xml;
+    }
+
+    /**
+     * @throws InvalidOrderException
+     */
+    private function assertSitemapHasBeenRead(): void
+    {
+        if (!isset($this->sitemapXml)) {
+            throw new InvalidOrderException(
+                'You should execute "Given the sitemap :sitemapUrl" step before executing this step.'
+            );
+        }
+    }
+
+    private function getXpathInspector(): DOMXPath
+    {
+        $xpath = new DOMXPath($this->sitemapXml);
+        $xpath->registerNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
+        $xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
+
+        return $xpath;
+    }
+
+    private function assertValidSitemap(string $sitemapSchemaFile): void
+    {
+        Assert::fileExists(
+            $sitemapSchemaFile,
+            sprintf('Sitemap schema file %s does not exist', $sitemapSchemaFile)
+        );
+
+        Assert::true(
+            @$this->sitemapXml->schemaValidate($sitemapSchemaFile),
+            sprintf(
+                'Sitemap %s does not pass validation using %s schema',
+                $this->sitemapXml->documentURI,
+                $sitemapSchemaFile
+            )
+        );
+    }
+
+    /**
+     * @throws DriverException
+     */
+    private function urlIsValid(DOMNode $locNode): void
+    {
+        try {
+            $this->visit($locNode->nodeValue);
+        } catch (\Exception $e) {
+            throw new InvalidArgumentException(
+                sprintf(
+                    'Sitemap Url %s is not valid in Sitemap: %s. Exception: %s',
+                    $locNode->nodeValue,
+                    $this->sitemapXml->documentURI,
+                    $e->getMessage()
+                ),
+                0,
+                $e
+            );
+        }
+    }
+
+    private function urlIsAlive(DOMNode $locNode): void
+    {
+        Assert::eq(
+            200,
+            $this->getStatusCode(),
+            sprintf(
+                'Sitemap Url %s is not valid in Sitemap: %s. Response status code: %s',
+                $locNode->nodeValue,
+                $this->sitemapXml->documentURI,
+                $this->getStatusCode()
+            )
         );
     }
 }

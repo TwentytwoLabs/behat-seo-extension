@@ -8,7 +8,7 @@ use Behat\Behat\Context\Environment\InitializedContextEnvironment;
 use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use Webmozart\Assert\Assert;
 
-class IndexationContext extends BaseContext
+final class IndexationContext extends BaseContext
 {
     private ?RobotsContext $robotsContext = null;
     private ?MetaContext $metaContext = null;
@@ -18,21 +18,11 @@ class IndexationContext extends BaseContext
      */
     public function gatherContexts(BeforeScenarioScope $scope): void
     {
+        /** @var InitializedContextEnvironment $env */
         $env = $scope->getEnvironment();
 
         $this->robotsContext = $env->getContext(RobotsContext::class);
         $this->metaContext = $env->getContext(MetaContext::class);
-    }
-
-    /**
-     * @Then the page should not be indexable
-     */
-    public function thePageShouldNotBeIndexable(): void
-    {
-        $this->assertInverse(
-            [$this, 'thePageShouldBeIndexable'],
-            'The page is indexable.'
-        );
     }
 
     /**
@@ -54,5 +44,13 @@ class IndexationContext extends BaseContext
                 )
             );
         }
+    }
+
+    /**
+     * @Then the page should not be indexable
+     */
+    public function thePageShouldNotBeIndexable(): void
+    {
+        $this->assertInverse([$this, 'thePageShouldBeIndexable'], 'The page is indexable.');
     }
 }

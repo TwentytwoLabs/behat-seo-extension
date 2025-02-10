@@ -11,7 +11,7 @@ use HtmlValidator\Validator;
 use InvalidArgumentException;
 use Webmozart\Assert\Assert;
 
-class HTMLContext extends BaseContext
+final class HTMLContext extends BaseContext
 {
     public const VALIDATION_SERVICES = [
         Validator::DEFAULT_VALIDATOR_URL,
@@ -34,8 +34,7 @@ class HTMLContext extends BaseContext
                 $validated = true;
                 $validationErrors = $validatorResult->getErrors();
                 break;
-            } catch (ServerException | UnknownParserException $e) {
-                // @ignoreException
+            } catch (ServerException | UnknownParserException) {
             }
         }
 
@@ -43,7 +42,7 @@ class HTMLContext extends BaseContext
             throw new PendingException('HTML validation services are not working');
         }
 
-        if (isset($validationErrors[0])) {
+        if (!empty($validationErrors[0])) {
             throw new InvalidArgumentException(
                 sprintf(
                     'HTML markup validation error: Line %s: "%s" - %s in %s',

@@ -7,7 +7,7 @@ namespace TwentytwoLabs\BehatSeoExtension\Context;
 use Behat\Mink\Element\NodeElement;
 use Webmozart\Assert\Assert;
 
-class UXContext extends BaseContext
+final class UXContext extends BaseContext
 {
     public const EXPECTED_VIEWPORT = "width=device-width, initial-scale=1";
 
@@ -18,11 +18,7 @@ class UXContext extends BaseContext
     {
         $viewportContent = $this->getViewportElement()->getAttribute('content');
 
-        Assert::eq(
-            self::EXPECTED_VIEWPORT,
-            $viewportContent,
-            'Site does not support responsive design'
-        );
+        Assert::eq(self::EXPECTED_VIEWPORT, $viewportContent, 'Site does not support responsive design');
     }
 
     /**

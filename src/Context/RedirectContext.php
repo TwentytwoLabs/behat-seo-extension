@@ -10,7 +10,7 @@ use InvalidArgumentException;
 use Symfony\Component\BrowserKit\AbstractBrowser;
 use Webmozart\Assert\Assert;
 
-class RedirectContext extends BaseContext
+final class RedirectContext extends BaseContext
 {
     /**
      * @AfterScenario
@@ -31,21 +31,7 @@ class RedirectContext extends BaseContext
      */
     public function iFollowRedirects(): void
     {
-        $this->getClient()->followRedirects(true);
-    }
-
-    /**
-     * @throws UnsupportedDriverActionException
-     */
-    private function getClient(): AbstractBrowser
-    {
-        $this->supportsDriver(BrowserKitDriver::class);
-
-        if (method_exists($this->getSession()->getDriver(), 'getClient')) {
-            return $this->getSession()->getDriver()->getClient();
-        }
-
-        throw new InvalidArgumentException();
+        $this->getClient()->followRedirects();
     }
 
     /**
@@ -65,7 +51,7 @@ class RedirectContext extends BaseContext
      */
     public function iShouldBeRedirected(string $url): void
     {
-        $headers = array_change_key_case($this->getSession()->getResponseHeaders(), CASE_LOWER);
+        $headers = array_change_key_case($this->getSession()->getResponseHeaders());
 
         Assert::keyExists($headers, 'location');
 
@@ -78,7 +64,21 @@ class RedirectContext extends BaseContext
             'The "Location" header does not redirect to the correct URI'
         );
 
-        $this->getClient()->followRedirects(true);
+        $this->getClient()->followRedirects();
         $this->getClient()->followRedirect();
+    }
+
+    /**
+     * @throws UnsupportedDriverActionException
+     */
+    private function getClient(): AbstractBrowser
+    {
+        $this->supportsDriver(BrowserKitDriver::class);
+
+        if (method_exists($this->getSession()->getDriver(), 'getClient')) {
+            return $this->getSession()->getDriver()->getClient();
+        }
+
+        throw new InvalidArgumentException();
     }
 }
