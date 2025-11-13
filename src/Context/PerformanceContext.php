@@ -158,7 +158,7 @@ final class PerformanceContext extends BaseContext
     /**
      * @return NodeElement[]
      */
-    private function getPageResources(string $resourceType, string $host = null): array
+    private function getPageResources(string $resourceType, ?string $host = null): array
     {
         if (!$xpath = $this->getResourceXpath($resourceType)) {
             return [];
