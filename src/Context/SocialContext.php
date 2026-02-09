@@ -29,7 +29,7 @@ final class SocialContext extends BaseContext
     public function theOpenGraphDataShouldNotSatisfyRequirements(string $socialNetworkName): void
     {
         $this->assertInverse(
-            fn () => $this->theOpenGraphDataShouldSatisfyRequirements($socialNetworkName),
+            fn() => $this->theOpenGraphDataShouldSatisfyRequirements($socialNetworkName),
             sprintf('The %s OG Data satisfies minimum requirements.', $socialNetworkName)
         );
     }
@@ -54,7 +54,7 @@ final class SocialContext extends BaseContext
     public function theOpenGraphDataShouldNotSatisfyFullRequirements(string $socialNetworkName): void
     {
         $this->assertInverse(
-            fn () => $this->theOpenGraphDataShouldSatisfyFullRequirements($socialNetworkName),
+            fn() => $this->theOpenGraphDataShouldSatisfyFullRequirements($socialNetworkName),
             sprintf('The %s OG Data satisfies full requirements.', $socialNetworkName)
         );
     }

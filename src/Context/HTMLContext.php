@@ -34,7 +34,7 @@ final class HTMLContext extends BaseContext
                 $validated = true;
                 $validationErrors = $validatorResult->getErrors();
                 break;
-            } catch (ServerException | UnknownParserException) {
+            } catch (ServerException|UnknownParserException) {
             }
         }
 

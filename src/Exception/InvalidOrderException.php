@@ -6,6 +6,4 @@ namespace TwentytwoLabs\BehatSeoExtension\Exception;
 
 use Exception;
 
-class InvalidOrderException extends Exception
-{
-}
+class InvalidOrderException extends Exception {}

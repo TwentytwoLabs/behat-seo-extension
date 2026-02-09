@@ -124,7 +124,7 @@ final class PerformanceContext extends BaseContext
     public function cssOrJavascriptFilesShouldNotBeMinified(string $resourceType): void
     {
         $this->assertInverse(
-            fn () => $this->cssOrJavascriptFilesShouldBeMinified($resourceType),
+            fn() => $this->cssOrJavascriptFilesShouldBeMinified($resourceType),
             sprintf('%s should not be minified.', $resourceType)
         );
     }
@@ -135,7 +135,7 @@ final class PerformanceContext extends BaseContext
     public function browserCacheMustNotBeEnabledForResources(string $host, string $resourceType): void
     {
         $this->assertInverse(
-            fn () => $this->browserCacheMustBeEnabledForResources($host, $resourceType),
+            fn() => $this->browserCacheMustBeEnabledForResources($host, $resourceType),
             sprintf('Browser cache is enabled for %s resources.', $resourceType)
         );
     }
