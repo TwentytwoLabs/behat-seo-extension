@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
 use Behat\Mink\Element\NodeElement;
-use InvalidArgumentException;
 use Webmozart\Assert\Assert;
 
 final class PerformanceContext extends BaseContext
@@ -124,7 +123,7 @@ final class PerformanceContext extends BaseContext
     public function cssOrJavascriptFilesShouldNotBeMinified(string $resourceType): void
     {
         $this->assertInverse(
-            fn() => $this->cssOrJavascriptFilesShouldBeMinified($resourceType),
+            fn () => $this->cssOrJavascriptFilesShouldBeMinified($resourceType),
             sprintf('%s should not be minified.', $resourceType)
         );
     }
@@ -135,7 +134,7 @@ final class PerformanceContext extends BaseContext
     public function browserCacheMustNotBeEnabledForResources(string $host, string $resourceType): void
     {
         $this->assertInverse(
-            fn() => $this->browserCacheMustBeEnabledForResources($host, $resourceType),
+            fn () => $this->browserCacheMustBeEnabledForResources($host, $resourceType),
             sprintf('Browser cache is enabled for %s resources.', $resourceType)
         );
     }
@@ -167,13 +166,13 @@ final class PerformanceContext extends BaseContext
         if ('external' === $host) {
             $xpath = preg_replace(
                 '/\[contains\(@(.*),/',
-                '[not(starts-with(@$1,"' . $this->webUrl . '") or starts-with(@$1,"/")) and contains(@$1,',
+                sprintf('[not(starts-with(@$1,"%s") or starts-with(@$1,"/")) and contains(@$1,', $this->webUrl),
                 $xpath
             );
         } elseif (null !== $host) {
             $xpath = preg_replace(
                 '/\[contains\(@(.*),/',
-                '[(starts-with(@$1,"' . $host . '") or starts-with(@$1,"/")) and contains(@$1,',
+                sprintf('[(starts-with(@$1,"%s") or starts-with(@$1,"/")) and contains(@$1,', $host),
                 $xpath
             );
         }
@@ -240,21 +239,19 @@ final class PerformanceContext extends BaseContext
             return $element->getAttribute('href');
         }
 
-        throw new InvalidArgumentException(
-            sprintf('%s resource type url is not implemented', $resourceType)
-        );
+        throw new \InvalidArgumentException(sprintf('%s resource type url is not implemented', $resourceType));
     }
 
     private function assertResourceTypeIsValid(string $resourceType): void
     {
+        $msg = sprintf(
+            '%s resource type is not valid. Allowed types are: %s',
+            $resourceType,
+            implode(',', self::RES_EXT)
+        );
+
         if (!in_array($resourceType, self::RES_EXT, true)) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    '%s resource type is not valid. Allowed types are: %s',
-                    $resourceType,
-                    implode(',', self::RES_EXT)
-                )
-            );
+            throw new \InvalidArgumentException($msg);
         }
     }
 
@@ -268,6 +265,7 @@ final class PerformanceContext extends BaseContext
         return preg_replace('/(?<=>)\s+|\s+(?=<)/', '', $html) ?? $html;
     }
 
+    // phpcs:disable
     private function minimizeJs(string $javascript): string
     {
         $minimized = preg_replace(
@@ -295,6 +293,7 @@ final class PerformanceContext extends BaseContext
 
         return $minimized ?? $css;
     }
+    // phpcs:enable
 
     private function checkResourceCache(NodeElement $element, string $resourceType): void
     {

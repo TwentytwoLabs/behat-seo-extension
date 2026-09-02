@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
-use Behat\Mink\Exception\UnsupportedDriverActionException;
-use InvalidArgumentException;
 use vipnytt\RobotsTxtParser\UriClient;
 use Webmozart\Assert\Assert;
 
@@ -75,11 +73,9 @@ final class RobotsContext extends BaseContext
         try {
             $this->getSession()->visit($sitemaps[0]);
         } catch (\Throwable $e) {
-            throw new InvalidArgumentException(
-                sprintf('Sitemap url %s is not valid. Exception: %s', $sitemaps[0], $e->getMessage()),
-                0,
-                $e
-            );
+            $msg = sprintf('Sitemap url %s is not valid. Exception: %s', $sitemaps[0], $e->getMessage());
+
+            throw new \InvalidArgumentException($msg, 0, $e);
         }
 
         Assert::eq(200, $this->getStatusCode(), sprintf('Sitemap url %s is not valid.', $sitemaps[0]));

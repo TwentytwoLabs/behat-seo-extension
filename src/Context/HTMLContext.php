@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
 use Behat\Behat\Tester\Exception\PendingException;
-use HtmlValidator\Exception\ServerException;
-use HtmlValidator\Exception\UnknownParserException;
+use HtmlValidator\Exception;
 use HtmlValidator\Validator;
-use InvalidArgumentException;
 use Webmozart\Assert\Assert;
 
 final class HTMLContext extends BaseContext
 {
-    public const VALIDATION_SERVICES = [
+    /** @var string[] */
+    public const array VALIDATION_SERVICES = [
         Validator::DEFAULT_VALIDATOR_URL,
         'https://validator.nu/',
         'https://validator.w3.org/nu/',
@@ -33,8 +32,9 @@ final class HTMLContext extends BaseContext
                 $validatorResult = $validator->validateDocument($this->getSession()->getPage()->getContent());
                 $validated = true;
                 $validationErrors = $validatorResult->getErrors();
+
                 break;
-            } catch (ServerException|UnknownParserException) {
+            } catch (Exception) {
             }
         }
 
@@ -43,15 +43,15 @@ final class HTMLContext extends BaseContext
         }
 
         if (!empty($validationErrors[0])) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'HTML markup validation error: Line %s: "%s" - %s in %s',
-                    $validationErrors[0]->getFirstLine(),
-                    $validationErrors[0]->getExtract(),
-                    $validationErrors[0]->getText(),
-                    $this->getCurrentUrl()
-                )
+            $msg = sprintf(
+                'HTML markup validation error: Line %s: "%s" - %s in %s',
+                $validationErrors[0]->getFirstLine(),
+                $validationErrors[0]->getExtract(),
+                $validationErrors[0]->getText(),
+                $this->getCurrentUrl()
             );
+
+            throw new \InvalidArgumentException($msg);
         }
     }
 

@@ -5,22 +5,16 @@ declare(strict_types=1);
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
 use Behat\Mink\Exception\DriverException;
-use DOMDocument;
-use DOMElement;
-use DOMNode;
-use DOMNodeList;
-use DOMXPath;
-use InvalidArgumentException;
 use TwentytwoLabs\BehatSeoExtension\Exception\InvalidOrderException;
 use Webmozart\Assert\Assert;
 
 final class SitemapContext extends BaseContext
 {
-    public const SITEMAP_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap.xsd';
-    public const SITEMAP_XHTML_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap_xhtml.xsd';
-    public const SITEMAP_INDEX_SCHEMA_FILE = __DIR__ . '/../Resources/schemas/sitemap_index.xsd';
+    public const string SITEMAP_SCHEMA_FILE = '%s/../Resources/schemas/sitemap.xsd';
+    public const string SITEMAP_XHTML_SCHEMA_FILE = '%s/../Resources/schemas/sitemap_xhtml.xsd';
+    public const string SITEMAP_INDEX_SCHEMA_FILE = '%s/../Resources/schemas/sitemap_index.xsd';
 
-    private DOMDocument $sitemapXml;
+    private \DOMDocument $sitemapXml;
 
     /**
      * @Given the sitemap :sitemapUrl
@@ -53,9 +47,9 @@ final class SitemapContext extends BaseContext
         $this->assertSitemapHasBeenRead();
 
         $sitemapSchemaFile = match (trim($sitemapType)) {
-            'index' => self::SITEMAP_INDEX_SCHEMA_FILE,
-            'multilanguage' => self::SITEMAP_XHTML_SCHEMA_FILE,
-            default => self::SITEMAP_SCHEMA_FILE,
+            'index' => sprintf(self::SITEMAP_INDEX_SCHEMA_FILE, __DIR__),
+            'multilanguage' => sprintf(self::SITEMAP_XHTML_SCHEMA_FILE, __DIR__),
+            default => sprintf(self::SITEMAP_SCHEMA_FILE, __DIR__),
         };
 
         $this->assertValidSitemap(realpath($sitemapSchemaFile));
@@ -71,9 +65,12 @@ final class SitemapContext extends BaseContext
         $this->assertSitemapHasBeenRead();
 
         $xpathExpression = sprintf(
-            '//sm:sitemapindex/sm:sitemap/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
-            $childSitemapUrl,
-            $childSitemapUrl
+            '//sm:sitemapindex/sm:sitemap/sm:loc[%s]',
+            sprintf(
+                'substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"',
+                $childSitemapUrl,
+                $childSitemapUrl
+            )
         );
 
         $sitemapChildren = $this->getXpathInspector()->query($xpathExpression);
@@ -97,9 +94,12 @@ final class SitemapContext extends BaseContext
         $this->assertSitemapHasBeenRead();
 
         $xpathExpression = sprintf(
-            '//sm:sitemapindex/sm:sitemap/sm:loc[substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"]',
-            $childSitemapUrl,
-            $childSitemapUrl
+            '//sm:sitemapindex/sm:sitemap/sm:loc[%s]',
+            sprintf(
+                'substring(text(), string-length(text())- string-length("%s") + 1)  = "%s"',
+                $childSitemapUrl,
+                $childSitemapUrl
+            )
         );
 
         $sitemapChildren = $this->getXpathInspector()->query($xpathExpression);
@@ -215,7 +215,7 @@ final class SitemapContext extends BaseContext
 
         $locNodes = $this->getXpathInspector()->query('//sm:urlset/sm:url/sm:loc');
 
-        Assert::isInstanceOf($locNodes, DOMNodeList::class);
+        Assert::isInstanceOf($locNodes, \DOMNodeList::class);
 
         foreach ($locNodes as $locNode) {
             $this->urlIsValid($locNode);
@@ -254,7 +254,7 @@ final class SitemapContext extends BaseContext
 
         shuffle($locNodesArray);
 
-        for ($i = 0; $i <= $randomUrlsCount - 1; $i++) {
+        for ($i = 0; $i <= $randomUrlsCount - 1; ++$i) {
             $this->urlIsValid($locNodesArray[$i]);
             $this->urlIsAlive($locNodesArray[$i]);
         }
@@ -269,13 +269,13 @@ final class SitemapContext extends BaseContext
     {
         $this->assertSitemapHasBeenRead();
 
-        $this->assertValidSitemap(self::SITEMAP_XHTML_SCHEMA_FILE);
+        $this->assertValidSitemap(sprintf(self::SITEMAP_XHTML_SCHEMA_FILE, __DIR__));
 
         $urlsNodes = $this->getXpathInspector()->query('//sm:urlset/sm:url');
 
         Assert::notFalse($urlsNodes);
 
-        /** @var DOMElement $urlNode */
+        /** @var \DOMElement $urlNode */
         foreach ($urlsNodes as $urlNode) {
             $urlElement = $urlNode->getElementsByTagName('loc')->item(0);
 
@@ -283,7 +283,7 @@ final class SitemapContext extends BaseContext
 
             $urlLoc = $urlElement->nodeValue;
 
-            /** @var DOMElement $alternateLink */
+            /** @var \DOMElement $alternateLink */
             foreach ($urlNode->getElementsByTagName('link') as $alternateLink) {
                 $alternateLinkHref = $alternateLink->getAttribute('href');
 
@@ -320,11 +320,11 @@ final class SitemapContext extends BaseContext
         );
     }
 
-    private function getSitemapXml(string $sitemapUrl): DOMDocument
+    private function getSitemapXml(string $sitemapUrl): \DOMDocument
     {
         $this->getSession()->visit($sitemapUrl);
 
-        $xml = new DOMDocument();
+        $xml = new \DOMDocument();
         $xml->strictErrorChecking = true;
         $xmlLoaded = @$xml->loadXML($this->getSession()->getPage()->getContent());
 
@@ -338,16 +338,15 @@ final class SitemapContext extends BaseContext
      */
     private function assertSitemapHasBeenRead(): void
     {
+        $msg = 'You should execute "Given the sitemap :sitemapUrl" step before executing this step.';
         if (!isset($this->sitemapXml)) {
-            throw new InvalidOrderException(
-                'You should execute "Given the sitemap :sitemapUrl" step before executing this step.'
-            );
+            throw new InvalidOrderException($msg);
         }
     }
 
-    private function getXpathInspector(): DOMXPath
+    private function getXpathInspector(): \DOMXPath
     {
-        $xpath = new DOMXPath($this->sitemapXml);
+        $xpath = new \DOMXPath($this->sitemapXml);
         $xpath->registerNamespace('sm', 'http://www.sitemaps.org/schemas/sitemap/0.9');
         $xpath->registerNamespace('xhtml', 'http://www.w3.org/1999/xhtml');
 
@@ -371,28 +370,23 @@ final class SitemapContext extends BaseContext
         );
     }
 
-    /**
-     * @throws DriverException
-     */
-    private function urlIsValid(DOMNode $locNode): void
+    private function urlIsValid(\DOMNode $locNode): void
     {
         try {
             $this->visit($locNode->nodeValue);
         } catch (\Exception $e) {
-            throw new InvalidArgumentException(
-                sprintf(
-                    'Sitemap Url %s is not valid in Sitemap: %s. Exception: %s',
-                    $locNode->nodeValue,
-                    $this->sitemapXml->documentURI,
-                    $e->getMessage()
-                ),
-                0,
-                $e
+            $msg = sprintf(
+                'Sitemap Url %s is not valid in Sitemap: %s. Exception: %s',
+                $locNode->nodeValue,
+                $this->sitemapXml->documentURI,
+                $e->getMessage()
             );
+
+            throw new \InvalidArgumentException($msg, 0, $e);
         }
     }
 
-    private function urlIsAlive(DOMNode $locNode): void
+    private function urlIsAlive(\DOMNode $locNode): void
     {
         Assert::eq(
             200,

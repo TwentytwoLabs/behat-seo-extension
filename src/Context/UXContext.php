@@ -9,7 +9,7 @@ use Webmozart\Assert\Assert;
 
 final class UXContext extends BaseContext
 {
-    public const EXPECTED_VIEWPORT = "width=device-width, initial-scale=1";
+    public const EXPECTED_VIEWPORT = 'width=device-width, initial-scale=1';
 
     /**
      * @Then the site should be responsive

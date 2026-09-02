@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace TwentytwoLabs\BehatSeoExtension\Context;
 
-use InvalidArgumentException;
 use Webmozart\Assert\Assert;
 
 final class SocialContext extends BaseContext
@@ -14,12 +13,12 @@ final class SocialContext extends BaseContext
      */
     public function theOpenGraphDataShouldSatisfyRequirements(string $socialNetworkName): void
     {
+        $msg = sprintf('%s open graph simple validation is not allowed.', $socialNetworkName);
+
         match ($socialNetworkName) {
             'Twitter' => $this->validateTwitterOpenGraphData(),
             'Facebook' => $this->validateFacebookOpenGraphData(),
-            default => throw new InvalidArgumentException(
-                sprintf('%s open graph simple validation is not allowed.', $socialNetworkName)
-            ),
+            default => throw new \InvalidArgumentException($msg),
         };
     }
 
@@ -29,7 +28,7 @@ final class SocialContext extends BaseContext
     public function theOpenGraphDataShouldNotSatisfyRequirements(string $socialNetworkName): void
     {
         $this->assertInverse(
-            fn() => $this->theOpenGraphDataShouldSatisfyRequirements($socialNetworkName),
+            fn () => $this->theOpenGraphDataShouldSatisfyRequirements($socialNetworkName),
             sprintf('The %s OG Data satisfies minimum requirements.', $socialNetworkName)
         );
     }
@@ -39,12 +38,12 @@ final class SocialContext extends BaseContext
      */
     public function theOpenGraphDataShouldSatisfyFullRequirements(string $socialNetworkName): void
     {
+        $msg = sprintf('%s open graph full validation is not allowed.', $socialNetworkName);
+
         match ($socialNetworkName) {
             'Twitter' => $this->validateFullTwitterOpenGraphData(),
             'Facebook' => $this->validateFullFacebookOpenGraphData(),
-            default => throw new InvalidArgumentException(
-                sprintf('%s open graph full validation is not allowed.', $socialNetworkName)
-            ),
+            default => throw new \InvalidArgumentException($msg),
         };
     }
 
@@ -54,7 +53,7 @@ final class SocialContext extends BaseContext
     public function theOpenGraphDataShouldNotSatisfyFullRequirements(string $socialNetworkName): void
     {
         $this->assertInverse(
-            fn() => $this->theOpenGraphDataShouldSatisfyFullRequirements($socialNetworkName),
+            fn () => $this->theOpenGraphDataShouldSatisfyFullRequirements($socialNetworkName),
             sprintf('The %s OG Data satisfies full requirements.', $socialNetworkName)
         );
     }

@@ -42,18 +42,18 @@
         "phpstan": "./vendor/bin/phpstan analyse"
     },
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.3",
         "ext-dom": "*",
         "friends-of-behat/mink-extension": "^2.7",
         "matriphe/iso-639": "^2.0",
         "rexxars/html-validator": "^2.3",
         "vipnytt/robotstxtparser": "^2.1",
-        "webmozart/assert": "^2.1"
+        "webmozart/assert": "^2.4"
     },
     "require-dev": {
         "friends-of-behat/mink-browserkit-driver": "^1.6",
-        "friendsofphp/php-cs-fixer": "^3.67",
-        "phpstan/phpstan": "^2.1",
-        "squizlabs/php_codesniffer": "^3.11"
+        "friendsofphp/php-cs-fixer": "^3.8",
+        "phpstan/phpstan": "^2.0",
+        "squizlabs/php_codesniffer": "^3.13"
     }
 }

@@ -17,7 +17,7 @@ final class AccessibilityContext extends BaseContext
         foreach ($this->getImageElements() as $imageElement) {
             Assert::notEmpty(
                 $imageElement->getAttribute('alt'),
-                'Alt Text is empty for image: ' . $imageElement->getHtml()
+                sprintf('Alt Text is empty for image: %s', $imageElement->getHtml())
             );
         }
     }

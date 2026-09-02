@@ -6,8 +6,9 @@ namespace TwentytwoLabs\BehatSeoExtension\Context;
 
 use Behat\Mink\Driver\BrowserKitDriver;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
-use InvalidArgumentException;
 use Symfony\Component\BrowserKit\AbstractBrowser;
+use Symfony\Component\BrowserKit\Request;
+use Symfony\Component\BrowserKit\Response;
 use Webmozart\Assert\Assert;
 
 final class RedirectContext extends BaseContext
@@ -69,6 +70,8 @@ final class RedirectContext extends BaseContext
     }
 
     /**
+     * @return AbstractBrowser<Request, Response>
+     *
      * @throws UnsupportedDriverActionException
      */
     private function getClient(): AbstractBrowser
@@ -79,6 +82,6 @@ final class RedirectContext extends BaseContext
             return $this->getSession()->getDriver()->getClient();
         }
 
-        throw new InvalidArgumentException();
+        throw new \InvalidArgumentException();
     }
 }

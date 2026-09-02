@@ -8,7 +8,6 @@ use Behat\Mink\Element\NodeElement;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\UnsupportedDriverActionException;
 use Behat\MinkExtension\Context\RawMinkContext;
-use InvalidArgumentException;
 use TwentytwoLabs\BehatSeoExtension\Exception\TimeoutException;
 
 class BaseContext extends RawMinkContext
@@ -60,15 +59,15 @@ class BaseContext extends RawMinkContext
         }
         $backtrace = debug_backtrace();
 
-        throw new TimeoutException(
-            sprintf(
-                "Timeout thrown by %s::%s()\n%s, line %s",
-                $backtrace[0]['class'],
-                $backtrace[0]['function'],
-                $backtrace[0]['file'],
-                $backtrace[0]['line']
-            )
+        $msg = sprintf(
+            "Timeout thrown by %s::%s()\n%s, line %s",
+            $backtrace[0]['class'],
+            $backtrace[0]['function'],
+            $backtrace[0]['file'],
+            $backtrace[0]['line']
         );
+
+        throw new TimeoutException($msg);
     }
 
     protected function toAbsoluteUrl(string $url): string
@@ -90,11 +89,9 @@ class BaseContext extends RawMinkContext
      */
     protected function supportsDriver(string $driverClass): void
     {
+        $msg = sprintf('This step is only supported by the %s driver', $driverClass);
         if (!is_a($this->getSession()->getDriver(), $driverClass)) {
-            throw new UnsupportedDriverActionException(
-                sprintf('This step is only supported by the %s driver', $driverClass),
-                $this->getSession()->getDriver()
-            );
+            throw new UnsupportedDriverActionException($msg, $this->getSession()->getDriver());
         }
     }
 
@@ -103,11 +100,9 @@ class BaseContext extends RawMinkContext
      */
     protected function doesNotSupportDriver(string $driverClass): void
     {
+        $msg = sprintf('This step is not supported by the %s driver', $driverClass);
         if (is_a($this->getSession()->getDriver(), $driverClass)) {
-            throw new UnsupportedDriverActionException(
-                sprintf('This step is not supported by the %s driver', $driverClass),
-                $this->getSession()->getDriver()
-            );
+            throw new UnsupportedDriverActionException($msg, $this->getSession()->getDriver());
         }
     }
 
@@ -115,10 +110,10 @@ class BaseContext extends RawMinkContext
     {
         try {
             $callableStepDefinition();
-        } catch (InvalidArgumentException $e) {
+        } catch (\InvalidArgumentException $e) {
             return;
         }
 
-        throw new InvalidArgumentException($exceptionMessage);
+        throw new \InvalidArgumentException($exceptionMessage);
     }
 }
